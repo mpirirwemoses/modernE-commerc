@@ -1,38 +1,102 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; 
-
- 
-import Header from "./components/Header"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Header from "./components/Header";
 import ProductDisplay from "./components/ProductDisplay";
-import CategoriesList from "./components/Categorychange";
 import Latest from "./components/Latest";
-import Items from "./components/categori";
-import Cart from "./components/Cart"
+import Cart from "./components/Cart";
 import ScrollToTop from "./components/ScrollToTop";
-import Port from "./components/port"
+import Category_nav from "./components/Category_nav";
+import { useState } from "react";
+
+// Admin Components
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminLogin from "./components/admin/AdminLogin";
+import AdminRegister from "./components/admin/AdminRegister";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import ProductManagement from "./components/admin/ProductManagement";
+import AddProduct from "./components/admin/AddProduct";
+import EditProduct from "./components/admin/EditProduct";
+import OrderManagement from "./components/admin/OrderManagement";
+import CancelledOrders from "./components/admin/CancelledOrders";
+import Analytics from "./components/admin/Analytics";
+
+// Customer Components
+import MyOrders from "./components/MyOrders";
+import OrderDetail from "./components/OrderDetail";
+import Login from "./components/Login";
+import Profile from "./components/Profile";
+import Settings from "./components/Settings";
+import Wallet from "./components/Wallet";
+import Wishlist from "./components/Wishlist";
+
+
 function App() {
-  
-  return (<Router>
-   <>
-   <ScrollToTop/>
-   <Port/>
-    {/* <Header/> */}
+  const [activeCategory, setActiveCategory] = useState(null);
 
-
-    {/* <CategoriesList/> */}
-   {/* <hr className="max-w-3/4 bg-gray-600"/>  horizontal rule to separate components */}
-    {/* <Routes> */}
-    {/* <Route path="/:title" element={<Items />} /> */}
-    {/* <Route path="/cart" element={<Cart />} /> */}
-    {/* <Route path="/pd/:id" element={<ProductDisplay />} /> */}
-    {/* <Route path ="/latest" element ={<Latest/>}/> */}
-    {/* </Routes> */}
-    {/* <Latest/> */}
-    
-    
-    </>
+  return (
+    <Router>
+      <>
+        <ScrollToTop />
+        <Header />
+        <Category_nav
+          activeCategory={activeCategory}
+          onCategoryClick={setActiveCategory}
+        />
+        <Routes>
+          {/* Main App Routes */}
+          <Route path="/" element={<Latest category={activeCategory} />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/pd/:id" element={<ProductDisplay />} />
+          <Route path="/latest" element={<Latest category={activeCategory} />} />
+          <Route path="/orders" element={<MyOrders />} />
+          <Route path="/orders/:id" element={<OrderDetail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/wallet" element={<Wallet />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/register" element={<AdminRegister />} />
+          <Route path="/admin" element={
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
+          } />
+          <Route path="/admin/products" element={
+            <AdminLayout>
+              <ProductManagement />
+            </AdminLayout>
+          } />
+          <Route path="/admin/products/new" element={
+            <AdminLayout>
+              <AddProduct />
+            </AdminLayout>
+          } />
+          <Route path="/admin/products/:id/edit" element={
+            <AdminLayout>
+              <EditProduct />
+            </AdminLayout>
+          } />
+          <Route path="/admin/orders" element={
+            <AdminLayout>
+              <OrderManagement />
+            </AdminLayout>
+          } />
+          <Route path="/admin/orders/cancelled" element={
+            <AdminLayout>
+              <CancelledOrders />
+            </AdminLayout>
+          } />
+          <Route path="/admin/analytics" element={
+            <AdminLayout>
+              <Analytics />
+            </AdminLayout>
+          } />
+        </Routes>
+      </>
     </Router>
-  
-  )
+  );
 }
 
 export default App;
