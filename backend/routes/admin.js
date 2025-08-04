@@ -3,25 +3,12 @@ const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// Middleware to check if user is admin
-const requireAdmin = async (req, res, next) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id }
-    });
-    
-    if (!user || user.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Access denied. Admin only.' });
-    }
-    next();
-  } catch (error) {
-    res.status(500).json({ error: 'Authentication error' });
-  }
-};
+
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -57,7 +44,7 @@ const upload = multer({
 // ==================== PRODUCT MANAGEMENT ====================
 
 // Get all products with pagination and filters
-router.get('/products', requireAdmin, async (req, res) => {
+router.get('/products', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const { page = 1, limit = 10, search, category, status } = req.query;
     const skip = (page - 1) * limit;
@@ -106,7 +93,7 @@ router.get('/products', requireAdmin, async (req, res) => {
 });
 
 // Create new product
-router.post('/products', requireAdmin, upload.fields([
+router.post('/products', protect, authorize('ADMIN'), upload.fields([
   { name: 'images', maxCount: 10 },
   { name: 'videos', maxCount: 5 }
 ]), async (req, res) => {
@@ -190,7 +177,7 @@ router.post('/products', requireAdmin, upload.fields([
 });
 
 // Update product
-router.put('/products/:id', requireAdmin, upload.fields([
+router.put('/products/:id', protect, authorize('ADMIN'), upload.fields([
   { name: 'images', maxCount: 10 },
   { name: 'videos', maxCount: 5 }
 ]), async (req, res) => {
@@ -267,7 +254,7 @@ router.put('/products/:id', requireAdmin, upload.fields([
 });
 
 // Delete product
-router.delete('/products/:id', requireAdmin, async (req, res) => {
+router.delete('/products/:id', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -300,7 +287,7 @@ router.delete('/products/:id', requireAdmin, async (req, res) => {
 });
 
 // Get single product
-router.get('/products/:id', requireAdmin, async (req, res) => {
+router.get('/products/:id', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -330,7 +317,7 @@ router.get('/products/:id', requireAdmin, async (req, res) => {
 // ==================== ORDER MANAGEMENT ====================
 
 // Get all orders with filters
-router.get('/orders', requireAdmin, async (req, res) => {
+router.get('/orders', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const { page = 1, limit = 10, status, search, dateFrom, dateTo } = req.query;
     const skip = (page - 1) * limit;
@@ -385,7 +372,7 @@ router.get('/orders', requireAdmin, async (req, res) => {
 });
 
 // Update order status
-router.patch('/orders/:id/status', requireAdmin, async (req, res) => {
+router.patch('/orders/:id/status', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     const { status, trackingNumber, notes } = req.body;
@@ -421,7 +408,7 @@ router.patch('/orders/:id/status', requireAdmin, async (req, res) => {
 });
 
 // Get cancelled orders
-router.get('/orders/cancelled', requireAdmin, async (req, res) => {
+router.get('/orders/cancelled', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
@@ -458,7 +445,7 @@ router.get('/orders/cancelled', requireAdmin, async (req, res) => {
 // ==================== ANALYTICS ====================
 
 // Get dashboard analytics
-router.get('/analytics/dashboard', requireAdmin, async (req, res) => {
+router.get('/analytics/dashboard', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -556,7 +543,7 @@ router.get('/analytics/dashboard', requireAdmin, async (req, res) => {
 });
 
 // Get product analytics
-router.get('/analytics/products', requireAdmin, async (req, res) => {
+router.get('/analytics/products', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const products = await prisma.product.findMany({
       include: {
@@ -587,7 +574,7 @@ router.get('/analytics/products', requireAdmin, async (req, res) => {
 // ==================== USER MANAGEMENT ====================
 
 // Get all users
-router.get('/users', requireAdmin, async (req, res) => {
+router.get('/users', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const { page = 1, limit = 10, search, role } = req.query;
     const skip = (page - 1) * limit;
@@ -640,7 +627,7 @@ router.get('/users', requireAdmin, async (req, res) => {
 });
 
 // Update user role
-router.patch('/users/:id/role', requireAdmin, async (req, res) => {
+router.patch('/users/:id/role', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
@@ -669,7 +656,7 @@ router.patch('/users/:id/role', requireAdmin, async (req, res) => {
 });
 
 // Toggle user active status
-router.patch('/users/:id/status', requireAdmin, async (req, res) => {
+router.patch('/users/:id/status', protect, authorize('ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     const { isActive } = req.body;

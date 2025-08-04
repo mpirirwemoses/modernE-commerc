@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { shopContext } from "../assets/context/ShopContext";
+import { shopContext } from "../assets/context/Shopcontext";
 import { productsAPI, reviewsAPI, wishlistAPI } from "../services/api";
 import { 
   ChevronLeft, 
@@ -45,9 +45,27 @@ import {
 } from 'lucide-react';
 
 const ProductDisplay = () => {
-  const { addToCart, addToWishlist, removeFromWishlist, user, wishlist } = useContext(shopContext);
+  const { addToCart, addToWishlist, removeFromWishlist, user, wishlist, cart } = useContext(shopContext);
   const { id } = useParams();
   const navigate = useNavigate();
+  
+  // Utility function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPgogIDx0ZXh0IHg9IjIwMCIgeT0iMjAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPgogICAgUHJvZHVjdCBJbWFnZQogIDwvdGV4dD4KICA8dGV4dCB4PSIyMDAiIHk9IjIzMCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj4KICAgIE5vdCBBdmFpbGFibGUKICA8L3RleHQ+Cjwvc3ZnPgo=';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    // Use relative URL for proxy
+    console.log('Image URL:', imageUrl, 'Using relative URL for proxy');
+    return imageUrl;
+  };
+
+  // Utility function to get full video URL
+  const getVideoUrl = (videoUrl) => {
+    if (!videoUrl) return '';
+    if (videoUrl.startsWith('http')) return videoUrl;
+    // Use relative URL for proxy
+    return videoUrl;
+  };
+
   
   // State management
   const [product, setProduct] = useState(null);
@@ -105,6 +123,8 @@ const ProductDisplay = () => {
         reviewsAPI.getReviewStats(id)
       ]);
 
+      console.log('Product data received:', productRes.data.data);
+      console.log('Product images:', productRes.data.data.images);
       setProduct(productRes.data.data);
       setReviews(reviewsRes.data.data.reviews || []);
       setReviewStats(statsRes.data.data);
@@ -164,26 +184,88 @@ const ProductDisplay = () => {
   };
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product) {
+      console.error('No product available');
+      return;
+    }
     
     if (!selectedSize && product.variants?.some(v => v.name === 'Size')) {
       alert('Please select a size');
       return;
     }
     
-    addToCart(product.id, quantity, selectedSize);
+    console.log('Adding to cart:', { productId: product.id, quantity, selectedSize });
+    
+    // Call addToCart without await since it handles its own async operations
+    addToCart(product.id, quantity, selectedSize)
+      .then(() => {
+        console.log('Successfully added to cart');
+        
+        // For guest users, immediately update localStorage and dispatch event
+        if (!user) {
+          const tempCart = JSON.parse(localStorage.getItem('tempCart') || '[]');
+          const existingItem = tempCart.find(cartItem => cartItem.productId === product.id);
+          
+          if (existingItem) {
+            existingItem.quantity += quantity;
+          } else {
+            tempCart.push({ productId: product.id, quantity, variantId: selectedSize });
+          }
+          
+          localStorage.setItem('tempCart', JSON.stringify(tempCart));
+        }
+        
+        // Dispatch cart update event for immediate UI update
+        window.dispatchEvent(new Event('cartUpdated'));
+        // Show success feedback
+        alert('Product added to cart successfully!');
+      })
+      .catch((error) => {
+        console.error('Error adding to cart:', error);
+        alert('Failed to add product to cart. Please try again.');
+      });
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
+    if (!product) {
+      console.error('No product available');
+      return;
+    }
     
     if (!selectedSize && product.variants?.some(v => v.name === 'Size')) {
       alert('Please select a size');
       return;
     }
     
-    addToCart(product.id, quantity, selectedSize);
-    navigate('/cart');
+    console.log('Buy now:', { productId: product.id, quantity, selectedSize });
+    
+    // Call addToCart without await since it handles its own async operations
+    addToCart(product.id, quantity, selectedSize)
+      .then(() => {
+        console.log('Successfully added to cart for buy now');
+        
+        // For guest users, immediately update localStorage and dispatch event
+        if (!user) {
+          const tempCart = JSON.parse(localStorage.getItem('tempCart') || '[]');
+          const existingItem = tempCart.find(cartItem => cartItem.productId === product.id);
+          
+          if (existingItem) {
+            existingItem.quantity += quantity;
+          } else {
+            tempCart.push({ productId: product.id, quantity, variantId: selectedSize });
+          }
+          
+          localStorage.setItem('tempCart', JSON.stringify(tempCart));
+        }
+        
+        // Dispatch cart update event for immediate UI update
+        window.dispatchEvent(new Event('cartUpdated'));
+        navigate('/cart');
+      })
+      .catch((error) => {
+        console.error('Error in buy now:', error);
+        alert('Failed to add product to cart. Please try again.');
+      });
   };
 
   const handleShare = async (platform) => {
@@ -276,22 +358,54 @@ const ProductDisplay = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">
+            {console.log('Rendering product images section')}
+            {console.log('Product:', product)}
+            {console.log('Current image index:', currentImageIndex)}
+            {console.log('Current image URL:', product.images?.[currentImageIndex]?.url)}
             {/* Main Image */}
             <div className="relative group">
-              <div 
-                ref={imageRef}
-                className="relative overflow-hidden rounded-lg bg-white"
-                onMouseMove={handleImageZoom}
-                onMouseEnter={() => setIsImageZoomed(true)}
-                onMouseLeave={() => setIsImageZoomed(false)}
-              >
-                <img
-                  src={product.images?.[currentImageIndex]?.url || '/placeholder-product.jpg'}
-                  alt={product.name}
-                  className={`w-full h-96 object-cover transition-transform duration-300 ${
-                    isImageZoomed ? 'scale-150' : 'scale-100'
-                  }`}
-                />
+                             <div 
+                 ref={imageRef}
+                 className="relative overflow-hidden rounded-lg bg-white"
+                 style={{ 
+                   minHeight: '384px',
+                   backgroundColor: '#f0f0f0'
+                 }}
+                 onMouseMove={handleImageZoom}
+                 onMouseEnter={() => setIsImageZoomed(true)}
+                 onMouseLeave={() => setIsImageZoomed(false)}
+               >
+                                 <img
+                   src={getImageUrl(product.images?.[currentImageIndex]?.url)}
+                   alt={product.name}
+                   className={`w-full h-96 object-cover transition-transform duration-300 ${
+                     isImageZoomed ? 'scale-150' : 'scale-100'
+                   }`}
+                   onError={(e) => {
+                     console.error('Image failed to load:', e.target.src);
+                     console.error('Current image index:', currentImageIndex);
+                     console.error('Product images:', product.images);
+                     e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPgogIDx0ZXh0IHg9IjIwMCIgeT0iMjAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPgogICAgUHJvZHVjdCBJbWFnZQogIDwvdGV4dD4KICA8dGV4dCB4PSIyMDAiIHk9IjIzMCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj4KICAgIE5vdCBBdmFpbGFibGUKICA8L3RleHQ+Cjwvc3ZnPgo=';
+                   }}
+                   onLoad={(e) => {
+                     console.log('Image loaded successfully:', product.images?.[currentImageIndex]?.url);
+                     console.log('Image element:', e.target);
+                     console.log('Image dimensions:', e.target.naturalWidth, 'x', e.target.naturalHeight);
+                     console.log('Image display style:', window.getComputedStyle(e.target).display);
+                     console.log('Image visibility:', window.getComputedStyle(e.target).visibility);
+                     console.log('Image opacity:', window.getComputedStyle(e.target).opacity);
+                   }}
+                   style={{ 
+                     border: '2px solid red',
+                     minHeight: '384px',
+                     display: 'block',
+                     maxWidth: '100%',
+                     width: '100%',
+                     height: '384px',
+                     objectFit: 'cover',
+                     objectPosition: 'center'
+                   }}
+                 />
                 
                 {/* Zoom indicator */}
                 {isImageZoomed && (
@@ -301,7 +415,7 @@ const ProductDisplay = () => {
                 )}
 
                 {/* Video play button if video exists */}
-                {product.videoUrl && (
+                {product.videos && product.videos.length > 0 && (
                   <button
                     onClick={() => setShowVideo(true)}
                     className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 hover:bg-opacity-50 transition-opacity"
@@ -340,9 +454,14 @@ const ProductDisplay = () => {
                     }`}
                   >
                     <img
-                      src={image.url}
+                      src={getImageUrl(image.url)}
                       alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error('Thumbnail image failed to load:', e.target.src);
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPgogIDx0ZXh0IHg9IjIwMCIgeT0iMjAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPgogICAgUHJvZHVjdCBJbWFnZQogIDwvdGV4dD4KICA8dGV4dCB4PSIyMDAiIHk9IjIzMCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiBmaWxsPSIjOWNhM2FmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj4KICAgIE5vdCBBdmFpbGFibGUKICA8L3RleHQ+Cjwvc3ZnPgo=';
+                      }}
+                      onLoad={() => console.log('Thumbnail loaded successfully:', image.url)}
                     />
                   </button>
                 ))}
@@ -759,7 +878,7 @@ const ProductDisplay = () => {
                       <div key={relatedProduct.id} className="group">
                         <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
                           <img
-                            src={relatedProduct.images?.[0]?.url || '/placeholder-product.jpg'}
+                            src={getImageUrl(relatedProduct.images?.[0]?.url)}
                             alt={relatedProduct.name}
                             className="h-full w-full object-cover object-center group-hover:opacity-75"
                           />
@@ -850,7 +969,7 @@ const ProductDisplay = () => {
       )}
 
       {/* Video Modal */}
-      {showVideo && product.videoUrl && (
+      {showVideo && product.videos && product.videos.length > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="relative max-w-4xl w-full mx-4">
             <button
@@ -860,7 +979,7 @@ const ProductDisplay = () => {
               <X className="w-8 h-8" />
             </button>
             <video
-              src={product.videoUrl}
+              src={getVideoUrl(product.videos[0].url)}
               controls
               className="w-full h-auto rounded-lg"
             >

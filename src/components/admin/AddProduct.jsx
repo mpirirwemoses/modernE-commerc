@@ -39,6 +39,20 @@ const AddProduct = () => {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
+  // Utility function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/placeholder-product.jpg';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `http://localhost:5000${imageUrl}`;
+  };
+
+  // Utility function to get full video URL
+  const getVideoUrl = (videoUrl) => {
+    if (!videoUrl) return '';
+    if (videoUrl.startsWith('http')) return videoUrl;
+    return `http://localhost:5000${videoUrl}`;
+  };
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -542,7 +556,7 @@ const AddProduct = () => {
                 {videos.map((video) => (
                   <div key={video.id} className="relative group">
                     <video
-                      src={video.url}
+                      src={getVideoUrl(video.url)}
                       className="w-full h-48 object-cover rounded-lg"
                       controls
                     />

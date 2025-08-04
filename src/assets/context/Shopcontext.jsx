@@ -18,14 +18,28 @@ const ShopcontextProvider = (props) => {
     const userData = localStorage.getItem('user');
     
     if (token && userData) {
+      console.log('User found in localStorage, fetching data...');
       setUser(JSON.parse(userData));
       fetchUserData();
     } else {
+      console.log('No user found, setting loading to false');
       setLoading(false);
       // For guest users, check localStorage cart
       updateLocalCartCount();
     }
   }, []);
+
+  // Ensure cart data is loaded when user state changes
+  useEffect(() => {
+    if (user && !loading) {
+      console.log('User state changed, ensuring cart data is loaded...');
+      // If we have a user but no cart data, fetch it
+      if (cart.length === 0) {
+        console.log('No cart data found, fetching cart...');
+        fetchUserData();
+      }
+    }
+  }, [user, loading]);
 
   // Listen for localStorage changes (for guest users)
   useEffect(() => {
@@ -59,6 +73,8 @@ const ShopcontextProvider = (props) => {
       const tempCart = JSON.parse(localStorage.getItem('tempCart') || '[]');
       const count = tempCart.reduce((acc, item) => acc + (item.quantity || 1), 0);
       setLocalCartCount(count);
+      // Dispatch event to update other components
+      dispatchCartUpdate();
     }
   };
 
@@ -70,15 +86,24 @@ const ShopcontextProvider = (props) => {
   // Fetch user data when logged in
   const fetchUserData = async () => {
     try {
+      console.log('Fetching user data...');
       const [profileRes, cartRes, wishlistRes] = await Promise.all([
         authAPI.getProfile(),
         cartAPI.getCart(),
         wishlistAPI.getWishlist()
       ]);
 
+      console.log('Profile response:', profileRes.data);
+      console.log('Cart response:', cartRes.data);
+      console.log('Wishlist response:', wishlistRes.data);
+
       setUser(profileRes.data.data);
       setCart(cartRes.data.data.items || []);
       setWishlist(wishlistRes.data.data || []);
+      
+      // Log the cart items for debugging
+      console.log('Cart items set:', cartRes.data.data.items || []);
+      console.log('Total items in cart:', (cartRes.data.data.items || []).reduce((acc, item) => acc + item.quantity, 0));
     } catch (error) {
       console.error('Error fetching user data:', error);
       if (error.response?.status === 401) {
@@ -165,11 +190,14 @@ const ShopcontextProvider = (props) => {
     setCart([]);
     setWishlist([]);
     updateLocalCartCount(); // Update local cart count after logout
+    dispatchCartUpdate(); // Dispatch event to update other components
   };
 
   // Cart functions
   const addToCart = async (productId, quantity = 1, variantId = null) => {
     try {
+      console.log('Adding to cart:', { productId, quantity, variantId, user: !!user });
+      
       if (!user) {
         // If not logged in, add to localStorage for later sync
         const tempCart = JSON.parse(localStorage.getItem('tempCart') || '[]');
@@ -184,15 +212,26 @@ const ShopcontextProvider = (props) => {
         localStorage.setItem('tempCart', JSON.stringify(tempCart));
         updateLocalCartCount(); // Update local cart count
         dispatchCartUpdate(); // Dispatch event to update other tabs
-        return;
+        return Promise.resolve();
       }
 
+      console.log('Adding to cart for logged-in user...');
       const response = await cartAPI.addToCart({ productId, quantity, variantId });
-      setCart(response.data.data.items || []);
+      console.log('Cart API response:', response.data);
+      
+      // After adding item, fetch the updated cart
+      const cartResponse = await cartAPI.getCart();
+      console.log('Updated cart response:', cartResponse.data);
+      
+      setCart(cartResponse.data.data.items || []);
+      console.log('Updated cart state:', cartResponse.data.data.items || []);
+      
       dispatchCartUpdate(); // Dispatch event to update other tabs
+      return Promise.resolve();
     } catch (error) {
       console.error('Add to cart error:', error);
       setError('Failed to add item to cart');
+      return Promise.reject(error);
     }
   };
 
@@ -209,7 +248,9 @@ const ShopcontextProvider = (props) => {
       }
 
       await cartAPI.removeFromCart(cartItemId);
-      setCart(prev => prev.filter(item => item.id !== cartItemId));
+      // Fetch updated cart after removing item
+      const cartResponse = await cartAPI.getCart();
+      setCart(cartResponse.data.data.items || []);
       dispatchCartUpdate(); // Dispatch event to update other tabs
     } catch (error) {
       console.error('Remove from cart error:', error);
@@ -233,11 +274,9 @@ const ShopcontextProvider = (props) => {
       }
 
       await cartAPI.updateQuantity(cartItemId, { quantity });
-      setCart(prev => 
-        prev.map(item => 
-          item.id === cartItemId ? { ...item, quantity } : item
-        )
-      );
+      // Fetch updated cart after updating quantity
+      const cartResponse = await cartAPI.getCart();
+      setCart(cartResponse.data.data.items || []);
       dispatchCartUpdate(); // Dispatch event to update other tabs
     } catch (error) {
       console.error('Update cart quantity error:', error);
@@ -255,7 +294,9 @@ const ShopcontextProvider = (props) => {
       }
 
       await cartAPI.clearCart();
-      setCart([]);
+      // Fetch updated cart after clearing
+      const cartResponse = await cartAPI.getCart();
+      setCart(cartResponse.data.data.items || []);
       dispatchCartUpdate(); // Dispatch event to update other tabs
     } catch (error) {
       console.error('Clear cart error:', error);
@@ -327,9 +368,16 @@ const ShopcontextProvider = (props) => {
     }
   };
 
-  // Calculate totals
-  const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const totalAmount = cart.reduce((acc, item) => acc + (parseFloat(item.product?.newPrice || 0) * item.quantity), 0);
+  // Calculate totals - Updated to handle both logged-in and guest users
+  const totalItems = user 
+    ? cart.reduce((acc, item) => acc + item.quantity, 0)
+    : localCartCount;
+    
+  const totalAmount = user 
+    ? cart.reduce((acc, item) => acc + (parseFloat(item.product?.newPrice || 0) * item.quantity), 0)
+    : 0; // For guest users, calculate from localStorage if needed
+
+  console.log('TotalItems calculation:', { user: !!user, cartLength: cart.length, totalItems, localCartCount });
 
   const value = {
     // State

@@ -23,6 +23,13 @@ const ProductManagement = () => {
   const [productToDelete, setProductToDelete] = useState(null);
   const navigate = useNavigate();
 
+  // Utility function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/placeholder.png';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `http://localhost:5000${imageUrl}`;
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
@@ -262,7 +269,7 @@ const ProductManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <img
-                        src={product.images?.[0]?.url || '/placeholder.png'}
+                        src={getImageUrl(product.images?.[0]?.url)}
                         alt={product.name}
                         className="h-10 w-10 rounded object-cover"
                       />

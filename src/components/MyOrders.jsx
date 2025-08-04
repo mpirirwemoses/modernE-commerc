@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { shopContext } from '../assets/context/ShopContext';
+import { shopContext } from '../assets/context/Shopcontext';
 import { 
   FaSearch, 
   FaFilter, 
@@ -42,6 +42,13 @@ const MyOrders = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+
+  // Utility function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/placeholder.png';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `http://localhost:5000${imageUrl}`;
+  };
 
   useEffect(() => {
     if (user) {
@@ -334,7 +341,7 @@ const MyOrders = () => {
                         <div key={item.id} className="flex items-center space-x-4">
                           <div className="flex-shrink-0">
                             <img
-                              src={item.product.images?.[0]?.url || '/placeholder.png'}
+                              src={getImageUrl(item.product.images?.[0]?.url)}
                               alt={item.product.name}
                               className="w-16 h-16 object-cover rounded-md"
                             />

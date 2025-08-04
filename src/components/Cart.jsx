@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react";
-import { shopContext } from "../assets/context/ShopContext";
+import { shopContext } from "../assets/context/Shopcontext";
 import { useNavigate } from "react-router-dom";
 import { 
   X, 
@@ -67,6 +67,13 @@ const Cart = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [showShippingCalculator, setShowShippingCalculator] = useState(false);
   const [zipCode, setZipCode] = useState('');
+
+  // Utility function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/placeholder-product.jpg';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `http://localhost:5000${imageUrl}`;
+  };
 
   const shippingMethods = [
     { id: 'standard', name: 'Standard Shipping', cost: 0, time: '2-3 business days' },
@@ -141,6 +148,8 @@ const Cart = () => {
         const updatedTempCart = tempCart.filter(item => item.productId !== itemId);
         localStorage.setItem('tempCart', JSON.stringify(updatedTempCart));
         setLocalCart(updatedTempCart);
+        // Dispatch cart update event immediately
+        window.dispatchEvent(new Event('cartUpdated'));
       } else {
         await removeFromCart(itemId);
       }
@@ -163,6 +172,8 @@ const Cart = () => {
         );
         localStorage.setItem('tempCart', JSON.stringify(updatedTempCart));
         setLocalCart(updatedTempCart);
+        // Dispatch cart update event immediately
+        window.dispatchEvent(new Event('cartUpdated'));
       } else {
         await updateCartQuantity(itemId, newQuantity);
       }
@@ -335,7 +346,7 @@ const Cart = () => {
                         {/* Product Image */}
                         <div className="flex-shrink-0">
                           <img
-                            src={product?.images?.[0]?.url || '/placeholder-product.jpg'}
+                            src={getImageUrl(product?.images?.[0]?.url)}
                             alt={product?.name || 'Product'}
                             className="w-20 h-20 object-cover rounded-lg"
                           />
@@ -446,7 +457,7 @@ const Cart = () => {
                     <div key={item.id} className="p-6">
                       <div className="flex items-start space-x-4">
                         <img
-                          src={item.product?.images?.[0]?.url || '/placeholder-product.jpg'}
+                          src={getImageUrl(item.product?.images?.[0]?.url)}
                           alt={item.product?.name || 'Product'}
                           className="w-20 h-20 object-cover rounded-lg"
                         />
@@ -488,7 +499,7 @@ const Cart = () => {
                       <div key={product.id} className="group cursor-pointer">
                         <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
                           <img
-                            src={product.images?.[0]?.url || '/placeholder-product.jpg'}
+                            src={getImageUrl(product.images?.[0]?.url)}
                             alt={product.name}
                             className="h-full w-full object-cover object-center group-hover:opacity-75"
                           />

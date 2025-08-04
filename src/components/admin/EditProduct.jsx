@@ -10,6 +10,12 @@ import {
 
 const EditProduct = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [product, setProduct] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -31,16 +37,24 @@ const EditProduct = () => {
     saleEndDate: ''
   });
 
-  const [categories, setCategories] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
-  const [existingVideos, setExistingVideos] = useState([]);
   const [newImages, setNewImages] = useState([]);
+  const [existingVideos, setExistingVideos] = useState([]);
   const [newVideos, setNewVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const navigate = useNavigate();
+
+  // Utility function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/placeholder-product.jpg';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `http://localhost:5000${imageUrl}`;
+  };
+
+  // Utility function to get full video URL
+  const getVideoUrl = (videoUrl) => {
+    if (!videoUrl) return '';
+    if (videoUrl.startsWith('http')) return videoUrl;
+    return `http://localhost:5000${videoUrl}`;
+  };
 
   useEffect(() => {
     fetchProduct();
@@ -552,7 +566,7 @@ const EditProduct = () => {
               {existingImages.map((image) => (
                 <div key={image.id} className="relative group">
                   <img
-                    src={image.url}
+                    src={getImageUrl(image.url)}
                     alt={image.alt || 'Product'}
                     className="w-full h-32 object-cover rounded-lg"
                   />
@@ -649,7 +663,7 @@ const EditProduct = () => {
               {existingVideos.map((video) => (
                 <div key={video.id} className="relative group">
                   <video
-                    src={video.url}
+                    src={getVideoUrl(video.url)}
                     className="w-full h-48 object-cover rounded-lg"
                     controls
                   />

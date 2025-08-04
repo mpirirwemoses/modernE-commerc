@@ -1,21 +1,78 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
-import { shopContext } from "../assets/context/ShopContext";
+import { shopContext } from "../assets/context/Shopcontext";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaUser, FaSignOutAlt, FaBox, FaCog, FaHeart, FaWallet, FaHome, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
 
 const Header = () => {
-  const { totalItems, user, localCartCount, logout } = useContext(shopContext);
+  const { totalItems, user, localCartCount, handleLogout, updateLocalCartCount } = useContext(shopContext);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const userMenuRef = useRef(null);
   
-  // Calculate total cart count
-  const cartCount = user ? totalItems : localCartCount;
+  // Initialize cart count on mount
+  useEffect(() => {
+    if (!user) {
+      const tempCart = JSON.parse(localStorage.getItem('tempCart') || '[]');
+      const count = tempCart.reduce((acc, item) => acc + (item.quantity || 1), 0);
+      console.log('Initial cart count setup:', { tempCart, count });
+      setCartCount(count);
+    } else {
+      setCartCount(totalItems);
+    }
+  }, [user, totalItems]);
+  
+  // Update cart count when context values change
+  useEffect(() => {
+    const newCartCount = user ? totalItems : localCartCount;
+    console.log('Cart count updated:', { user, totalItems, localCartCount, newCartCount });
+    setCartCount(newCartCount);
+  }, [user, totalItems, localCartCount]);
+
+  // Listen for cart update events and update immediately
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      if (!user) {
+        // For guest users, immediately update the cart count from localStorage
+        const tempCart = JSON.parse(localStorage.getItem('tempCart') || '[]');
+        const count = tempCart.reduce((acc, item) => acc + (item.quantity || 1), 0);
+        console.log('Cart update event - guest user:', { tempCart, count });
+        setCartCount(count);
+      } else {
+        // For logged-in users, the context will handle the update
+        console.log('Cart update event - logged in user:', { totalItems });
+        setCartCount(totalItems);
+      }
+    };
+
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
+  }, [user, totalItems]);
+
+  // Also listen for storage changes (for cross-tab updates)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'tempCart' && !user) {
+        const tempCart = JSON.parse(localStorage.getItem('tempCart') || '[]');
+        const count = tempCart.reduce((acc, item) => acc + (item.quantity || 1), 0);
+        setCartCount(count);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [user]);
 
   const profileImage = "https://via.placeholder.com/150"; // Replace with actual profile image URL
 
-  const handleLogout = () => {
-    logout();
+  const handleLogoutClick = () => {
+    handleLogout();
     setShowUserMenu(false);
   };
 
@@ -241,7 +298,7 @@ const Header = () => {
                       
                       <div className="border-t border-gray-100">
                         <button
-                          onClick={handleLogout}
+                          onClick={handleLogoutClick}
                           className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           <FaSignOutAlt className="w-4 h-4 mr-3" />

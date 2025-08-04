@@ -1,8 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 import ProductDisplay from "./components/ProductDisplay";
 import Latest from "./components/Latest";
 import Cart from "./components/Cart";
+import Checkout from "./components/Checkout";
 import ScrollToTop from "./components/ScrollToTop";
 import Category_nav from "./components/Category_nav";
 import { useState } from "react";
@@ -33,20 +35,20 @@ function App() {
   const [activeCategory, setActiveCategory] = useState(null);
 
   return (
-    <Router>
-      <>
-        <ScrollToTop />
-        <Header />
-        <Category_nav
-          activeCategory={activeCategory}
-          onCategoryClick={setActiveCategory}
-        />
-        <Routes>
+    <>
+      <ScrollToTop />
+      <Header />
+      <Category_nav
+        activeCategory={activeCategory}
+        onCategoryClick={setActiveCategory}
+      />
+      <Routes>
           {/* Main App Routes */}
           <Route path="/" element={<Latest category={activeCategory} />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/pd/:id" element={<ProductDisplay />} />
-          <Route path="/latest" element={<Latest category={activeCategory} />} />
+          <Route path="/latest" element={<Latest category="latest" />} />
           <Route path="/orders" element={<MyOrders />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
           <Route path="/login" element={<Login />} />
@@ -54,6 +56,10 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/wishlist" element={<Wishlist />} />
+          
+          {/* Category Routes */}
+          <Route path="/category/:categorySlug" element={<Latest />} />
+          <Route path="/categories" element={<Latest category={null} />} />
           
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -94,8 +100,8 @@ function App() {
             </AdminLayout>
           } />
         </Routes>
+      <Footer />
       </>
-    </Router>
   );
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { shopContext } from '../assets/context/ShopContext';
+import { shopContext } from '../assets/context/Shopcontext';
 import { 
   FaArrowLeft,
   FaBox,
@@ -27,6 +27,13 @@ const OrderDetail = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Utility function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/placeholder.png';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `http://localhost:5000${imageUrl}`;
+  };
 
   useEffect(() => {
     if (user && id) {
@@ -234,7 +241,7 @@ const OrderDetail = () => {
                 {order.items?.map((item) => (
                   <div key={item.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                     <img
-                      src={item.product.images?.[0]?.url || '/placeholder.png'}
+                      src={getImageUrl(item.product.images?.[0]?.url)}
                       alt={item.product.name}
                       className="w-16 h-16 object-cover rounded-md"
                     />

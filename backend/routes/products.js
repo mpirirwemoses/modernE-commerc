@@ -14,7 +14,8 @@ router.get('/', async (req, res) => {
     const products = await prisma.product.findMany({
       include: {
         category: { select: { id: true, name: true, slug: true } },
-        images: { where: { isPrimary: true }, take: 1 },
+        images: { orderBy: { order: 'asc' } },
+        videos: { orderBy: { order: 'asc' } },
         reviews: { select: { rating: true } },
         _count: { select: { reviews: true } }
       }
@@ -50,6 +51,9 @@ router.get('/:id', async (req, res) => {
           }
         },
         images: {
+          orderBy: { order: 'asc' }
+        },
+        videos: {
           orderBy: { order: 'asc' }
         },
         variants: {

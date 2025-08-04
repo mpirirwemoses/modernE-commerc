@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { shopContext } from '../assets/context/ShopContext';
+import { shopContext } from '../assets/context/Shopcontext';
 import { FaHeart, FaTrash, FaShoppingCart, FaEye } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
@@ -22,6 +22,8 @@ const Wishlist = () => {
   const handleMoveToCart = async (productId) => {
     try {
       await addToCart(productId, 1);
+      // Dispatch cart update event for immediate UI update
+      window.dispatchEvent(new Event('cartUpdated'));
       setSuccess('Item moved to cart');
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {

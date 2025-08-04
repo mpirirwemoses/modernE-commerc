@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { motion } from 'framer-motion';
-import { shopContext } from '../assets/context/ShopContext';
+import { shopContext } from '../assets/context/Shopcontext';
 import { FaCreditCard, FaWallet, FaPlus, FaTrash, FaEdit, FaEye, FaEyeSlash, FaTimes } from 'react-icons/fa';
 
 const Wallet = () => {

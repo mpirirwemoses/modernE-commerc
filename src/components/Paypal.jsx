@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { useNavigate } from "react-router-dom";
-import { shopContext } from "../assets/context/ShopContext";
+import { shopContext } from "../assets/context/Shopcontext";
 
 
 // Component to display messages

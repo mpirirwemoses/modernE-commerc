@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { shopContext } from '../assets/context/ShopContext';
+import { shopContext } from '../assets/context/Shopcontext';
 import { FaUser, FaEnvelope, FaPhone, FaEdit, FaSave, FaTimes, FaMapMarkerAlt, FaCreditCard, FaHeart, FaBox } from 'react-icons/fa';
 
 const Profile = () => {

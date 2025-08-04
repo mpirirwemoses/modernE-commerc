@@ -16,6 +16,13 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('month');
 
+  // Utility function to get full image URL
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return '/placeholder.png';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `http://localhost:5000${imageUrl}`;
+  };
+
   useEffect(() => {
     fetchAnalytics();
   }, [timeRange]);
@@ -297,7 +304,7 @@ const Analytics = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <img
-                        src={product.images?.[0]?.url || '/placeholder.png'}
+                        src={getImageUrl(product.images?.[0]?.url)}
                         alt={product.name}
                         className="h-10 w-10 rounded object-cover"
                       />
